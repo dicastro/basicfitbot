@@ -33,4 +33,8 @@ public class ProxyProperties {
     public void setPort(int port) {
         this.port = port;
     }
+    
+    public String getHostPort() {
+        return host + ":" + port;
+    }
 }

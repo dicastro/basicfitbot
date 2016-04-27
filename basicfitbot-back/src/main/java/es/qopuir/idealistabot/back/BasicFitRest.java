@@ -22,9 +22,8 @@ import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import net.anthavio.phanbedder.Phanbedder;
 
 @Component
 public class BasicFitRest {
@@ -32,16 +31,22 @@ public class BasicFitRest {
 
     private static final String BASICFIT_WEEK_URL = "https://portal.virtuagym.com/classes/week/2016-04-27?event_type=1&coach=0&activity_id=0&member_id_filter=0&embedded=1&planner_type=7&show_personnel_schedule=&in_app=0&pref_club=10560&embedded=1";
 
+    @Autowired
+    private ProxyProperties proxyProperties;
+
     // @Cacheable("idealistaBuildingHtmlRequest")
     public void getBasicFitTimetable(File dest) throws IOException {
-        File phantomjs = Phanbedder.unpack();
-
-        Proxy proxy = new Proxy();
-        proxy.setProxyType(ProxyType.MANUAL).setHttpProxy("alca.proxy.corp.sopra:8080").setFtpProxy("alca.proxy.corp.sopra:8080")
-                .setSslProxy("alca.proxy.corp.sopra:8080").setNoProxy("localhost, 127.0.0.1");
+        File phantomjs = PhantomjsUtils.unpack();
 
         DesiredCapabilities cap = new DesiredCapabilities();
-        cap.setCapability(CapabilityType.PROXY, proxy);
+
+        if (proxyProperties.isEnabled()) {
+            Proxy proxy = new Proxy();
+            proxy.setProxyType(ProxyType.MANUAL).setHttpProxy(proxyProperties.getHostPort()).setSslProxy(proxyProperties.getHostPort())
+                    .setNoProxy("localhost, 127.0.0.1");
+            cap.setCapability(CapabilityType.PROXY, proxy);
+        }
+
         cap.setCapability(CapabilityType.TAKES_SCREENSHOT, true);
         cap.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomjs.getAbsolutePath());
 
@@ -82,7 +87,7 @@ public class BasicFitRest {
                 }
             });
         }
-        
+
         File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
         // Now you can do whatever you need to do with it, for example copy somewhere
         FileUtils.copyFile(srcFile, dest);
