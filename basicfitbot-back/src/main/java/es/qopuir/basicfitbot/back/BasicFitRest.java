@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import net.anthavio.phanbedder.Phanbedder;
+import es.qopuir.basicfitbot.back.PhantomjsDownloader.Version;
 
 @Component
 public class BasicFitRest {
@@ -38,7 +38,7 @@ public class BasicFitRest {
 
     // @Cacheable("idealistaBuildingHtmlRequest")
     public void getBasicFitTimetable(File dest) throws IOException {
-        File phantomjs = Phanbedder.unpack();
+        File phantomjs = proxyProperties.isEnabled() ? PhantomjsDownloader.download(Version.V_2_1_1, proxyProperties) : PhantomjsDownloader.download(Version.V_2_1_1);
 
         DesiredCapabilities cap = new DesiredCapabilities();
 
