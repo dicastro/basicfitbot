@@ -187,7 +187,7 @@ public class PhantomjsDownloader {
             try {
                 URLConnection connection = null;
 
-                if (proxy.isEnabled()) {
+                if (proxy != null && proxy.isEnabled()) {
                     InetSocketAddress sa = new InetSocketAddress(proxy.getHost(), proxy.getPort());
 
                     connection = downloadUrl.openConnection(new Proxy(Proxy.Type.HTTP, sa));

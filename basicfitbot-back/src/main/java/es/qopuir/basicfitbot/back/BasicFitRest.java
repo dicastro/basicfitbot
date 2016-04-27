@@ -38,7 +38,7 @@ public class BasicFitRest {
 
     // @Cacheable("idealistaBuildingHtmlRequest")
     public void getBasicFitTimetable(File dest) throws IOException {
-        File phantomjs = proxyProperties.isEnabled() ? PhantomjsDownloader.download(Version.V_2_1_1, proxyProperties) : PhantomjsDownloader.download(Version.V_2_1_1);
+        File phantomjs = PhantomjsDownloader.download(Version.V_2_1_1, proxyProperties);
 
         DesiredCapabilities cap = new DesiredCapabilities();
 
