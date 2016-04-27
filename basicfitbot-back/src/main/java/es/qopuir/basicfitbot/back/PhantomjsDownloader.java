@@ -11,8 +11,6 @@ import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -33,20 +31,26 @@ import org.slf4j.LoggerFactory;
 
 public class PhantomjsDownloader {
     private static final Logger LOG = LoggerFactory.getLogger(PhantomjsDownloader.class);
-
-    private static final String BASE_DOWNLOAD_URL = "https://bitbucket.org/ariya/phantomjs/downloads/";
+    
+    private static final int BUFFER_SIZE = 8192;
 
     public enum Version {
-        V_2_1_1("2.1.1");
+        V_2_1_1("2.1.1", "https://bitbucket.org/ariya/phantomjs/downloads/");
 
         private final String version;
+        private final String baseDownloadUrl;
 
-        private Version(String version) {
+        private Version(String version, String baseDownloadUrl) {
             this.version = version;
+            this.baseDownloadUrl = baseDownloadUrl;
         }
 
         public String getVersion() {
             return version;
+        }
+
+        public String getBaseDownloadUrl() {
+            return baseDownloadUrl;
         }
     }
 
@@ -79,7 +83,7 @@ public class PhantomjsDownloader {
         // multiple versions can coexist
         return download(version, new File(javaIoTmpdir, "phantomjs-" + version.getVersion()), null);
     }
-    
+
     public static File download(Version version, ProxyProperties proxy) {
         String javaIoTmpdir = System.getProperty("java.io.tmpdir");
         // multiple versions can coexist
@@ -97,7 +101,7 @@ public class PhantomjsDownloader {
         File file = download(version, new File(directory), null);
         return file.getAbsolutePath();
     }
-    
+
     public static String download(Version version, String directory, ProxyProperties proxy) {
         File file = download(version, new File(directory), proxy);
         return file.getAbsolutePath();
@@ -152,23 +156,14 @@ public class PhantomjsDownloader {
     }
 
     private static void download(Version version, Platform platform, File destination, ProxyProperties proxy) {
-        LOG.info("About to download Phantomjs version {}", version.getVersion());
+        LOG.info("Downloading phantomjs {} binary", version.getVersion());
 
         if (destination.exists() && destination.isFile() && destination.canExecute()) {
-            LOG.info("Phantomjs binary is available");
+            LOG.info("Phantomjs {} binary is available", version.getVersion());
             return; // keep existing
         }
 
         String downloadFileName = platform.getFileName(version);
-
-        URL downloadUrl = null;
-        try {
-            downloadUrl = new URL(BASE_DOWNLOAD_URL + downloadFileName);
-        } catch (MalformedURLException e) {
-            // ignore
-        }
-
-        LOG.info("Phantomjs download url {}", downloadUrl.toString());
 
         String javaIoTmpdir = System.getProperty("java.io.tmpdir");
 
@@ -178,15 +173,21 @@ public class PhantomjsDownloader {
         File downloadFile = downloadPath.resolve(downloadFileName).toFile();
 
         if (downloadFile.exists() && downloadFile.isFile()) {
-            LOG.info("Phantomjs already downloaded");
+            LOG.info("Phantomjs {} already downloaded", version.getVersion());
         } else {
-            LOG.debug("Download destination {}", downloadFile.getAbsolutePath());
-
-            InputStream stream = null;
+            URL downloadUrl = null;
 
             try {
-                URLConnection connection = null;
+                downloadUrl = new URL(version.getBaseDownloadUrl() + downloadFileName);
+            } catch (MalformedURLException e) {
+                // ignore
+            }
 
+            LOG.info("Phantomjs {} download url -> {}", version.getVersion(), downloadUrl.toString());
+
+            URLConnection connection = null;
+
+            try {
                 if (proxy != null && proxy.isEnabled()) {
                     InetSocketAddress sa = new InetSocketAddress(proxy.getHost(), proxy.getPort());
 
@@ -194,41 +195,48 @@ public class PhantomjsDownloader {
                 } else {
                     connection = downloadUrl.openConnection();
                 }
-
-                stream = connection.getInputStream();
             } catch (IOException e) {
                 throw new IllegalStateException("Download url not found " + downloadUrl.toString(), e);
             }
 
-            try (ReadableByteChannel rbc = Channels.newChannel(stream); FileOutputStream fos = new FileOutputStream(downloadFile)) {
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+            try (InputStream stream = connection.getInputStream(); FileOutputStream fos = new FileOutputStream(downloadFile)) {
+                final byte[] buffer = new byte[BUFFER_SIZE];
+                int n = 0;
+                
+                while (-1 != (n = stream.read(buffer))) {
+                    fos.write(buffer, 0, n);
+                }
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to download resource: " + downloadUrl.toString() + " into: " + downloadFile.toString(), e);
             }
         }
 
-        LOG.info("About to uncompress file {}", downloadFile.getAbsolutePath());
+        LOG.info("Uncompressing downloaded file -> {}", downloadFile.getAbsolutePath());
 
         File tarFile = downloadPath.resolve(downloadFileName.replace(".bz2", "")).toFile();
 
         if (!tarFile.exists()) {
-            try (ReadableByteChannel rbc = Channels.newChannel(new BZip2CompressorInputStream(new FileInputStream(downloadFile)));
+            try (BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(new FileInputStream(downloadFile));
                     FileOutputStream fos = new FileOutputStream(tarFile)) {
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                final byte[] buffer = new byte[BUFFER_SIZE];
+                int n = 0;
+                while (-1 != (n = bzIn.read(buffer))) {
+                    fos.write(buffer, 0, n);
+                }
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to uncompress resource: " + downloadFile.getAbsolutePath(), e);
             }
         } else {
-            LOG.info("File is already uncompressed");
+            LOG.info("Downloaded file is already uncompressed");
         }
 
         Path uncompressPath = downloadPath.resolve(downloadFileName.replace(".tar.bz2", ""));
         File outputDir = uncompressPath.toFile();
 
         if (outputDir.exists() && outputDir.isDirectory()) {
-            LOG.info("Tar is already untarred");
+            LOG.info("Tar file is already untarred");
         } else {
-            LOG.info("About to untar {} to dir {}", tarFile.getAbsolutePath(), outputDir.getAbsolutePath());
+            LOG.info("Untaring file {} to {}", tarFile.getAbsolutePath(), uncompressPath.toFile().getAbsolutePath());
 
             List<File> untaredFiles = new LinkedList<File>();
 
@@ -239,28 +247,26 @@ public class PhantomjsDownloader {
                     File outputFile = new File(outputDir, entry.getName());
 
                     if (entry.isDirectory()) {
-                        LOG.debug("Attempting to write output directory {}", outputFile.getAbsolutePath());
-
                         if (!outputFile.exists()) {
-                            LOG.debug("Attempting to create output directory {}", outputFile.getAbsolutePath());
+                            LOG.debug("Extracting directory -> {}", outputFile.getAbsolutePath());
 
                             if (!outputFile.mkdirs()) {
-                                throw new IllegalStateException(String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
+                                throw new IllegalStateException(String.format("Couldn't extract directory %s.", outputFile.getAbsolutePath()));
                             }
                         }
                     } else {
-                        LOG.debug("Extracting output file {}", outputFile.getAbsolutePath());
+                        LOG.debug("Extracting file -> {}", outputFile.getAbsolutePath());
 
                         try (OutputStream outputFileStream = new FileOutputStream(outputFile)) {
                             IOUtils.copy(tarInputStream, outputFileStream);
                         } catch (IOException e) {
-                            LOG.error("Error while extracting file {}", outputFile.getAbsolutePath(), e);
+                            LOG.error("Error while extracting file -> {}", outputFile.getAbsolutePath(), e);
                         }
                     }
                     untaredFiles.add(outputFile);
                 }
             } catch (IOException e1) {
-                LOG.error("Error while untarring file {}", tarFile.getAbsolutePath(), e1);
+                LOG.error("Error while untarring file -> {}", tarFile.getAbsolutePath(), e1);
             }
         }
 
@@ -270,12 +276,20 @@ public class PhantomjsDownloader {
             Files.walkFileTree(uncompressPath, finder);
 
             if (finder.getNumMatches() == 1) {
+                LOG.debug("Phantomjs {} binary file found -> {}", version.getVersion(), finder.getMatches().get(0).toFile().getAbsolutePath());
+
                 try (FileOutputStream fos = new FileOutputStream(destination)) {
+                    LOG.debug("Copying phantomjs {} binary from {} to {}", version.getVersion(),
+                            finder.getMatches().get(0).toFile().getAbsolutePath(), destination.getAbsolutePath());
+
                     Files.copy(finder.getMatches().get(0), fos);
                 }
+            } else {
+                LOG.warn("Phantomjs {} binary file not found in uncompressed directory {}", version.getVersion(),
+                        uncompressPath.toFile().getAbsolutePath());
             }
         } catch (IOException e) {
-            LOG.error("ERROR", e);
+            LOG.error("Error locating phantomjs {} in uncompressed directory", version.getVersion(), e);
         }
     }
 
