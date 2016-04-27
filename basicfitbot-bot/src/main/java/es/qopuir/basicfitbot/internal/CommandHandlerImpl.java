@@ -1,12 +1,7 @@
 package es.qopuir.basicfitbot.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.FileAttribute;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,13 +11,7 @@ import org.springframework.util.StringUtils;
 
 import es.qopuir.basicfitbot.Command;
 import es.qopuir.basicfitbot.CommandHandler;
-import es.qopuir.basicfitbot.CommandType;
 import es.qopuir.basicfitbot.Methods;
-import es.qopuir.basicfitbot.back.DmiRest;
-import es.qopuir.basicfitbot.back.IdealistaRest;
-import es.qopuir.basicfitbot.back.WeatherImageMode;
-import es.qopuir.basicfitbot.back.model.DmiCityModel;
-import es.qopuir.basicfitbot.back.model.IdealistaBuildingModel;
 import es.qopuir.basicfitbot.model.Chat;
 import es.qopuir.basicfitbot.repo.ChatRepository;
 import es.qopuir.telegrambot.model.Update;
@@ -37,12 +26,6 @@ public class CommandHandlerImpl implements CommandHandler {
     @Autowired
     // TODO (dcastro): crear un servicio transaccional para acceder al repositorio
     private ChatRepository chatRepository;
-
-    @Autowired
-    private DmiRest dmiRest;
-
-    @Autowired
-    private IdealistaRest idealistaRest;
 
     @Override
     public void handleCommand(Update update, Command command) throws MalformedURLException, IOException {
@@ -90,77 +73,6 @@ public class CommandHandlerImpl implements CommandHandler {
     }
 
     private void handleIdealistaCommand(Update update, Command command) throws MalformedURLException, IOException {
-        switch (command.getCommand()) {
-            case INMUEBLE:
-                if (StringUtils.isEmpty(command.getArgs())) {
-                    if (chatRepository.exists(update.getMessage().getChat().getId())) {
-                        Chat chat = chatRepository.findOne(update.getMessage().getChat().getId());
-
-                        IdealistaBuildingModel idealistaBuilding = idealistaRest.findBuildingById(chat.getBuildingId());
-
-                        if (idealistaBuilding == null) {
-                            LOG.debug("Idealista building {} not found", chat.getBuildingId());
-
-                            methods.sendMessage(update.getMessage().getChat().getId(),
-                                    "Lo lamentamos mucho, pero no hemos conseguido localizar ningun inmueble con el identificador facilitado ("
-                                            + chat.getBuildingId() + ")" + System.lineSeparator() + "¿Esta seguro de que es correcto?");
-                        } else {
-                            LOG.debug("Idealista building {} found with (title, photo) -> ({}, {})", chat.getBuildingId(),
-                                    idealistaBuilding.getTitle(), idealistaBuilding.getMainPhotoUrl().toString());
-
-                            Path createTempFile = Files.createTempFile("", ".png", new FileAttribute[0]);
-                            File file = createTempFile.toFile();
-
-                            methods.sendPhoto(update.getMessage().getChat().getId(), idealistaBuilding.getMainPhotoUrl(), file,
-                                    idealistaBuilding.getTitle());
-                            methods.sendMessage(update.getMessage().getChat().getId(), "Para seleccionar otro inmueble, envie el comando:"
-                                    + System.lineSeparator() + "/inmueble identificador - seleccionar un inmueble");
-
-                            file.delete();
-                        }
-                    } else {
-                        LOG.debug("Idealista building not selected yet");
-
-                        methods.sendMessage(update.getMessage().getChat().getId(),
-                                "Todavia no se ha seleccionado ningun inmueble." + System.lineSeparator()
-                                        + "Para seleccionar un inmueble envie el comando:" + System.lineSeparator()
-                                        + "/inmueble identificador - seleccionar un inmueble");
-                    }
-                } else {
-                    LOG.debug("Idealista building {} selected", command.getArgs().trim());
-
-                    // TODO (dcastro): validate received inmuebleId
-                    Chat chat = new Chat();
-                    chat.setChatId(update.getMessage().getChat().getId());
-                    chat.setBuildingId(command.getArgs().trim());
-
-                    chatRepository.save(chat);
-
-                    methods.sendMessage(update.getMessage().getChat().getId(), "Inmueble modificado a " + command.getArgs().trim());
-                }
-
-                break;
-            default:
-                WeatherImageMode imageType = WeatherImageMode.NOW;
-
-                if (command.getCommand() == CommandType.WEEK_WHEATHER) {
-                    imageType = WeatherImageMode.WEEK;
-                }
-
-                DmiCityModel cityModel = dmiRest.findCityId(command.getArgs());
-                URL weatherImageURL = dmiRest.getWeatherImageURL(cityModel, imageType);
-
-                if (null == weatherImageURL) {
-                    methods.sendMessage(update.getMessage().getChat().getId(), "Please use /now + cityname or /week + cityname");
-                    return;
-                }
-
-                Path createTempFile = Files.createTempFile("", ".png", new FileAttribute[0]);
-                File file = createTempFile.toFile();
-
-                methods.sendPhoto(update.getMessage().getChat().getId(), weatherImageURL, file, "DMI weather in " + cityModel.getLabel());
-
-                file.delete();
-        }
+        LOG.debug("Command received {} with arguments {}", command.getCommand(), command.getArgs());
     }
 }

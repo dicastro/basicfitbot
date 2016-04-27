@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import net.anthavio.phanbedder.Phanbedder;
+
 @Component
 public class BasicFitRest {
     private static final Logger LOG = LoggerFactory.getLogger(BasicFitRest.class);
@@ -36,7 +38,7 @@ public class BasicFitRest {
 
     // @Cacheable("idealistaBuildingHtmlRequest")
     public void getBasicFitTimetable(File dest) throws IOException {
-        File phantomjs = PhantomjsUtils.unpack();
+        File phantomjs = Phanbedder.unpack();
 
         DesiredCapabilities cap = new DesiredCapabilities();
 

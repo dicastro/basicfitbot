@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.qopuir.basicfitbot.back.BasicFitRest;
-import es.qopuir.basicfitbot.back.IdealistaRest;
 import es.qopuir.basicfitbot.internal.CommandImpl;
 import es.qopuir.telegrambot.model.Message;
 import es.qopuir.telegrambot.model.Update;
@@ -42,9 +41,6 @@ public class BotController {
 
     @Autowired
     private ObjectMapper jacksonObjectMapper;
-
-    @Autowired
-    private IdealistaRest idealistaRest;
 
     @Autowired
     private BasicFitRest basicFitRest;
