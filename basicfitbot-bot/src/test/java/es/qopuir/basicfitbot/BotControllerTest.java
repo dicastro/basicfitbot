@@ -1,4 +1,4 @@
-package es.qopuir.idealistabot;
+package es.qopuir.basicfitbot;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -7,6 +7,10 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
+import es.qopuir.basicfitbot.Application;
+import es.qopuir.basicfitbot.BotController;
+import es.qopuir.basicfitbot.Command;
+import es.qopuir.basicfitbot.CommandType;
 import es.qopuir.telegrambot.model.Message;
 import es.qopuir.telegrambot.model.Update;
 

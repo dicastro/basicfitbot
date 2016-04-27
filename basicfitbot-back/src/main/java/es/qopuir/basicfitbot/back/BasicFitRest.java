@@ -1,4 +1,4 @@
-package es.qopuir.idealistabot.back;
+package es.qopuir.basicfitbot.back;
 
 import java.io.File;
 import java.io.IOException;

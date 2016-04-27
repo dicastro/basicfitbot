@@ -1,4 +1,4 @@
-package es.qopuir.idealistabot.back.model;
+package es.qopuir.basicfitbot.back.model;
 
 import java.net.URL;
 

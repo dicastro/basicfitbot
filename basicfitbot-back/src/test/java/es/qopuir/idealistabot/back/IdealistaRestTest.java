@@ -5,7 +5,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
 
-import es.qopuir.idealistabot.back.model.IdealistaBuildingModel;
+import es.qopuir.basicfitbot.back.IdealistaRest;
+import es.qopuir.basicfitbot.back.model.IdealistaBuildingModel;
 
 @RunWith(BlockJUnit4ClassRunner.class)
 public class IdealistaRestTest {

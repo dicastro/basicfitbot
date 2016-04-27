@@ -1,4 +1,4 @@
-package es.qopuir.idealistabot.back;
+package es.qopuir.basicfitbot.back;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -8,7 +8,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import es.qopuir.idealistabot.back.model.DmiCityModel;
+import es.qopuir.basicfitbot.back.model.DmiCityModel;
 
 @Component
 public class DmiRest {

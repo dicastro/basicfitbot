@@ -1,10 +1,10 @@
-package es.qopuir.idealistabot;
+package es.qopuir.basicfitbot;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import es.qopuir.idealistabot.Application;
+import es.qopuir.basicfitbot.Application;
 
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;

@@ -1,4 +1,4 @@
-package es.qopuir.idealistabot.back;
+package es.qopuir.basicfitbot.back;
 
 public enum WeatherImageMode {
     NOW, WEEK;

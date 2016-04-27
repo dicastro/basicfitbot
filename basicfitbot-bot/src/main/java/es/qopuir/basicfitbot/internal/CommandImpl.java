@@ -1,7 +1,7 @@
-package es.qopuir.idealistabot.internal;
+package es.qopuir.basicfitbot.internal;
 
-import es.qopuir.idealistabot.Command;
-import es.qopuir.idealistabot.CommandType;
+import es.qopuir.basicfitbot.Command;
+import es.qopuir.basicfitbot.CommandType;
 
 public class CommandImpl implements Command {
 	private CommandType command;

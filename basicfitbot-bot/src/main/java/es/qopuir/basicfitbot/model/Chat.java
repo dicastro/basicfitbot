@@ -1,4 +1,4 @@
-package es.qopuir.idealistabot.model;
+package es.qopuir.basicfitbot.model;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;

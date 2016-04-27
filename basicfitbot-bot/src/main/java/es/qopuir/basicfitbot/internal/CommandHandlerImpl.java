@@ -1,4 +1,4 @@
-package es.qopuir.idealistabot.internal;
+package es.qopuir.basicfitbot.internal;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,17 +14,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import es.qopuir.idealistabot.Command;
-import es.qopuir.idealistabot.CommandHandler;
-import es.qopuir.idealistabot.CommandType;
-import es.qopuir.idealistabot.Methods;
-import es.qopuir.idealistabot.back.DmiRest;
-import es.qopuir.idealistabot.back.IdealistaRest;
-import es.qopuir.idealistabot.back.WeatherImageMode;
-import es.qopuir.idealistabot.back.model.DmiCityModel;
-import es.qopuir.idealistabot.back.model.IdealistaBuildingModel;
-import es.qopuir.idealistabot.model.Chat;
-import es.qopuir.idealistabot.repo.ChatRepository;
+import es.qopuir.basicfitbot.Command;
+import es.qopuir.basicfitbot.CommandHandler;
+import es.qopuir.basicfitbot.CommandType;
+import es.qopuir.basicfitbot.Methods;
+import es.qopuir.basicfitbot.back.DmiRest;
+import es.qopuir.basicfitbot.back.IdealistaRest;
+import es.qopuir.basicfitbot.back.WeatherImageMode;
+import es.qopuir.basicfitbot.back.model.DmiCityModel;
+import es.qopuir.basicfitbot.back.model.IdealistaBuildingModel;
+import es.qopuir.basicfitbot.model.Chat;
+import es.qopuir.basicfitbot.repo.ChatRepository;
 import es.qopuir.telegrambot.model.Update;
 
 @Component

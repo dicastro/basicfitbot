@@ -1,4 +1,4 @@
-package es.qopuir.idealistabot;
+package es.qopuir.basicfitbot;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,9 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import es.qopuir.idealistabot.back.BasicFitRest;
-import es.qopuir.idealistabot.back.IdealistaRest;
-import es.qopuir.idealistabot.internal.CommandImpl;
+import es.qopuir.basicfitbot.back.BasicFitRest;
+import es.qopuir.basicfitbot.back.IdealistaRest;
+import es.qopuir.basicfitbot.internal.CommandImpl;
 import es.qopuir.telegrambot.model.Message;
 import es.qopuir.telegrambot.model.Update;
 

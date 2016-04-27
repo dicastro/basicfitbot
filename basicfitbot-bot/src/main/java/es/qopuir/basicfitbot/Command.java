@@ -1,4 +1,4 @@
-package es.qopuir.idealistabot;
+package es.qopuir.basicfitbot;
 
 public interface Command {
     CommandType getCommand();

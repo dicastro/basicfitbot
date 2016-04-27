@@ -1,4 +1,4 @@
-package es.qopuir.idealistabot;
+package es.qopuir.basicfitbot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;

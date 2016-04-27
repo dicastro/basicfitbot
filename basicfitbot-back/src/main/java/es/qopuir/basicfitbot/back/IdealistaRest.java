@@ -1,4 +1,4 @@
-package es.qopuir.idealistabot.back;
+package es.qopuir.basicfitbot.back;
 
 import java.net.URL;
 
@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
-import es.qopuir.idealistabot.back.model.IdealistaBuildingModel;
+import es.qopuir.basicfitbot.back.model.IdealistaBuildingModel;
 
 @Component
 public class IdealistaRest {
