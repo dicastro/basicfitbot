@@ -32,297 +32,290 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PhantomjsDownloader {
-    private static final Logger LOG = LoggerFactory.getLogger(PhantomjsDownloader.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PhantomjsDownloader.class);
 
-    private static final String BASE_DOWNLOAD_URL = "https://bitbucket.org/ariya/phantomjs/downloads/";
+	private static final String BASE_DOWNLOAD_URL = "https://bitbucket.org/ariya/phantomjs/downloads/";
 
-    public enum Version {
-        V_2_1_1("2.1.1");
+	public enum Version {
+		V_2_1_1("2.1.1");
 
-        private final String version;
+		private final String version;
 
-        private Version(String version) {
-            this.version = version;
-        }
+		private Version(String version) {
+			this.version = version;
+		}
 
-        public String getVersion() {
-            return version;
-        }
-    }
+		public String getVersion() {
+			return version;
+		}
+	}
 
-    enum Platform {
-        WINDOWS("-windows", ".zip"), MAC("-macosx", ".zip"), LINUX_32("-linux-i386", ".tar.bz2"), LINUX_64("-linux-x86_64", ".tar.bz2");
+	enum Platform {
+		WINDOWS("-windows", ".zip"), MAC("-macosx", ".zip"), LINUX_32("-linux-i386",
+				".tar.bz2"), LINUX_64("-linux-x86_64", ".tar.bz2");
 
-        private final String fileBaseName = "phantomjs-";
-        private final String platformName;
-        private final String format;
+		private final String fileBaseName = "phantomjs-";
+		private final String platformName;
+		private final String format;
 
-        private Platform(String platformName, String format) {
-            this.platformName = platformName;
-            this.format = format;
-        }
+		private Platform(String platformName, String format) {
+			this.platformName = platformName;
+			this.format = format;
+		}
 
-        public String getFileName(Version version) {
-            return fileBaseName + version.getVersion() + platformName + format;
-        }
-    }
+		public String getFileName(Version version) {
+			return fileBaseName + version.getVersion() + platformName + format;
+		}
+	}
 
-    /**
-     * Download and unpack bundled phantomjs binary version into
-     * ${java.io.tmpdir}/phantomjs-${phantomjs.version}/phantomjs
-     * 
-     * @param version
-     * @return File of the unbundled phantomjs binary
-     */
-    public static File download(Version version) {
-        String javaIoTmpdir = System.getProperty("java.io.tmpdir");
-        // multiple versions can coexist
-        return download(version, new File(javaIoTmpdir, "phantomjs-" + version.getVersion()), null);
-    }
-    
-    public static File download(Version version, ProxyProperties proxy) {
-        String javaIoTmpdir = System.getProperty("java.io.tmpdir");
-        // multiple versions can coexist
-        return download(version, new File(javaIoTmpdir, "phantomjs-" + version.getVersion()), proxy);
-    }
+	/**
+	 * Download and unpack bundled phantomjs binary version into
+	 * target/phantomjs-${phantomjs.version}/phantomjs
+	 * 
+	 * @param version
+	 * @return File of the unbundled phantomjs binary
+	 */
+	public static File download(Version version) {
+		// String javaIoTmpdir = System.getProperty("java.io.tmpdir");
+		// multiple versions can coexist
+		Path appTargetDir = Paths.get("target", "phantomjs-" + version.getVersion());
+		return download(version, appTargetDir.toFile(), null);
+	}
 
-    /**
-     * Download and unpack bundled phantomjs binary version into specified directory
-     * 
-     * @param version
-     * @param directory
-     * @return file path of the unbundled phantomjs binary
-     */
-    public static String download(Version version, String directory) {
-        File file = download(version, new File(directory), null);
-        return file.getAbsolutePath();
-    }
-    
-    public static String download(Version version, String directory, ProxyProperties proxy) {
-        File file = download(version, new File(directory), proxy);
-        return file.getAbsolutePath();
-    }
+	public static File download(Version version, ProxyProperties proxy) {
+		// multiple versions can coexist
+		Path appTargetDir = Paths.get("target", "phantomjs-" + version.getVersion());
+		return download(version, appTargetDir.toFile(), proxy);
+	}
 
-    /**
-     * Download and unpack bundled phantomjs binary version into specified directory
-     * 
-     * @param version
-     * @param destination
-     * @return File of the unbundled phantomjs binary
-     */
-    public static File download(Version version, File destination, ProxyProperties proxy) {
-        if (!destination.exists()) {
-            if (!destination.mkdirs()) {
-                throw new IllegalArgumentException("Failed to make target directory: " + destination);
-            }
-        }
+	/**
+	 * Download and unpack bundled phantomjs binary version into specified
+	 * directory
+	 * 
+	 * @param version
+	 * @param destination
+	 * @return File of the unbundled phantomjs binary
+	 */
+	private static File download(Version version, File destination, ProxyProperties proxy) {
+		if (!destination.exists()) {
+			if (!destination.mkdirs()) {
+				throw new IllegalArgumentException("Failed to make target directory: " + destination);
+			}
+		}
 
-        File destinationFile;
-        boolean chmodx;
-        String osname = System.getProperty("os.name").toLowerCase();
-        if (osname.contains("win")) {
-            destinationFile = new File(destination, "phantomjs.exe");
-            download(version, Platform.WINDOWS, destinationFile, proxy);
-            chmodx = false;
-        } else if (osname.contains("mac os")) {
-            destinationFile = new File(destination, "phantomjs");
-            download(version, Platform.MAC, destinationFile, proxy);
-            chmodx = true;
-        } else if (osname.contains("linux")) {
-            destinationFile = new File(destination, "phantomjs");
-            // Linux has i386 or amd64
-            String osarch = System.getProperty("os.arch");
-            if (osarch.equals("i386")) {
-                download(version, Platform.LINUX_32, destinationFile, proxy);
-            } else {
-                download(version, Platform.LINUX_64, destinationFile, proxy);
-            }
-            chmodx = true;
-        } else {
-            throw new IllegalArgumentException("Unsupported OS " + osname);
-        }
+		File destinationFile = null;
+		boolean chmodx = false;
 
-        if (chmodx) {
-            if (!destinationFile.setExecutable(true)) {
-                throw new IllegalArgumentException("Failed to make executable " + destinationFile);
-            }
-        }
+		String osname = System.getProperty("os.name").toLowerCase();
 
-        return destinationFile;
-    }
+		if (osname.contains("win")) {
+			destinationFile = new File(destination, "phantomjs.exe");
+			download(version, Platform.WINDOWS, destinationFile, proxy);
+			chmodx = false;
+		} else if (osname.contains("mac os")) {
+			destinationFile = new File(destination, "phantomjs");
+			download(version, Platform.MAC, destinationFile, proxy);
+			chmodx = true;
+		} else if (osname.contains("linux")) {
+			destinationFile = new File(destination, "phantomjs");
+			// Linux has i386 or amd64
+			String osarch = System.getProperty("os.arch");
+			if (osarch.equals("i386")) {
+				download(version, Platform.LINUX_32, destinationFile, proxy);
+			} else {
+				download(version, Platform.LINUX_64, destinationFile, proxy);
+			}
+			chmodx = true;
+		} else {
+			throw new IllegalArgumentException("Unsupported OS " + osname);
+		}
 
-    private static void download(Version version, Platform platform, File destination, ProxyProperties proxy) {
-        LOG.info("About to download Phantomjs version {}", version.getVersion());
+		if (chmodx) {
+			if (!destinationFile.setExecutable(true)) {
+				throw new IllegalArgumentException("Failed to make executable " + destinationFile);
+			}
+		}
 
-        if (destination.exists() && destination.isFile() && destination.canExecute()) {
-            LOG.info("Phantomjs binary is available");
-            return; // keep existing
-        }
+		return destinationFile;
+	}
 
-        String downloadFileName = platform.getFileName(version);
+	private static void download(Version version, Platform platform, File destination, ProxyProperties proxy) {
+		LOG.info("About to download Phantomjs version {}", version.getVersion());
 
-        URL downloadUrl = null;
-        try {
-            downloadUrl = new URL(BASE_DOWNLOAD_URL + downloadFileName);
-        } catch (MalformedURLException e) {
-            // ignore
-        }
+		if (destination.exists() && destination.isFile() && destination.canExecute()) {
+			LOG.info("Phantomjs binary is available");
+			return; // keep existing
+		}
 
-        LOG.info("Phantomjs download url {}", downloadUrl.toString());
+		String downloadFileName = platform.getFileName(version);
 
-        String javaIoTmpdir = System.getProperty("java.io.tmpdir");
+		URL downloadUrl = null;
+		try {
+			downloadUrl = new URL(BASE_DOWNLOAD_URL + downloadFileName);
+		} catch (MalformedURLException e) {
+			// ignore
+		}
 
-        Path downloadPath = Paths.get(javaIoTmpdir, "download", "phantomjs");
-        downloadPath.toFile().mkdirs();
+		LOG.info("Phantomjs download url {}", downloadUrl.toString());
 
-        File downloadFile = downloadPath.resolve(downloadFileName).toFile();
+		String javaIoTmpdir = System.getProperty("java.io.tmpdir");
 
-        if (downloadFile.exists() && downloadFile.isFile()) {
-            LOG.info("Phantomjs already downloaded");
-        } else {
-            LOG.debug("Download destination {}", downloadFile.getAbsolutePath());
+		Path downloadPath = Paths.get(javaIoTmpdir, "download", "phantomjs");
+		downloadPath.toFile().mkdirs();
 
-            InputStream stream = null;
+		File downloadFile = downloadPath.resolve(downloadFileName).toFile();
 
-            try {
-                URLConnection connection = null;
+		if (downloadFile.exists() && downloadFile.isFile()) {
+			LOG.info("Phantomjs already downloaded");
+		} else {
+			LOG.debug("Download destination {}", downloadFile.getAbsolutePath());
 
-                if (proxy != null && proxy.isEnabled()) {
-                    InetSocketAddress sa = new InetSocketAddress(proxy.getHost(), proxy.getPort());
+			InputStream stream = null;
 
-                    connection = downloadUrl.openConnection(new Proxy(Proxy.Type.HTTP, sa));
-                } else {
-                    connection = downloadUrl.openConnection();
-                }
+			try {
+				URLConnection connection = null;
 
-                stream = connection.getInputStream();
-            } catch (IOException e) {
-                throw new IllegalStateException("Download url not found " + downloadUrl.toString(), e);
-            }
+				if (proxy != null && proxy.isEnabled()) {
+					InetSocketAddress sa = new InetSocketAddress(proxy.getHost(), proxy.getPort());
 
-            try (ReadableByteChannel rbc = Channels.newChannel(stream); FileOutputStream fos = new FileOutputStream(downloadFile)) {
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to download resource: " + downloadUrl.toString() + " into: " + downloadFile.toString(), e);
-            }
-        }
+					connection = downloadUrl.openConnection(new Proxy(Proxy.Type.HTTP, sa));
+				} else {
+					connection = downloadUrl.openConnection();
+				}
 
-        LOG.info("About to uncompress file {}", downloadFile.getAbsolutePath());
+				stream = connection.getInputStream();
+			} catch (IOException e) {
+				throw new IllegalStateException("Download url not found " + downloadUrl.toString(), e);
+			}
 
-        File tarFile = downloadPath.resolve(downloadFileName.replace(".bz2", "")).toFile();
+			try (ReadableByteChannel rbc = Channels.newChannel(stream);
+					FileOutputStream fos = new FileOutputStream(downloadFile)) {
+				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+			} catch (Exception e) {
+				throw new IllegalStateException(
+						"Failed to download resource: " + downloadUrl.toString() + " into: " + downloadFile.toString(),
+						e);
+			}
+		}
 
-        if (!tarFile.exists()) {
-            try (ReadableByteChannel rbc = Channels.newChannel(new BZip2CompressorInputStream(new FileInputStream(downloadFile)));
-                    FileOutputStream fos = new FileOutputStream(tarFile)) {
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to uncompress resource: " + downloadFile.getAbsolutePath(), e);
-            }
-        } else {
-            LOG.info("File is already uncompressed");
-        }
+		LOG.info("About to uncompress file {}", downloadFile.getAbsolutePath());
 
-        Path uncompressPath = downloadPath.resolve(downloadFileName.replace(".tar.bz2", ""));
-        File outputDir = uncompressPath.toFile();
+		File tarFile = downloadPath.resolve(downloadFileName.replace(".bz2", "")).toFile();
 
-        if (outputDir.exists() && outputDir.isDirectory()) {
-            LOG.info("Tar is already untarred");
-        } else {
-            LOG.info("About to untar {} to dir {}", tarFile.getAbsolutePath(), outputDir.getAbsolutePath());
+		if (!tarFile.exists()) {
+			try (ReadableByteChannel rbc = Channels
+					.newChannel(new BZip2CompressorInputStream(new FileInputStream(downloadFile)));
+					FileOutputStream fos = new FileOutputStream(tarFile)) {
+				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+			} catch (Exception e) {
+				throw new IllegalStateException("Failed to uncompress resource: " + downloadFile.getAbsolutePath(), e);
+			}
+		} else {
+			LOG.info("File is already uncompressed");
+		}
 
-            List<File> untaredFiles = new LinkedList<File>();
+		Path uncompressPath = downloadPath.resolve(downloadFileName.replace(".tar.bz2", ""));
+		File outputDir = uncompressPath.toFile();
 
-            try (TarArchiveInputStream tarInputStream = new TarArchiveInputStream(new FileInputStream(tarFile))) {
-                TarArchiveEntry entry = null;
+		if (outputDir.exists() && outputDir.isDirectory()) {
+			LOG.info("Tar is already untarred");
+		} else {
+			LOG.info("About to untar {} to dir {}", tarFile.getAbsolutePath(), outputDir.getAbsolutePath());
 
-                while ((entry = tarInputStream.getNextTarEntry()) != null) {
-                    File outputFile = new File(outputDir, entry.getName());
+			List<File> untaredFiles = new LinkedList<File>();
 
-                    if (entry.isDirectory()) {
-                        LOG.debug("Attempting to write output directory {}", outputFile.getAbsolutePath());
+			try (TarArchiveInputStream tarInputStream = new TarArchiveInputStream(new FileInputStream(tarFile))) {
+				TarArchiveEntry entry = null;
 
-                        if (!outputFile.exists()) {
-                            LOG.debug("Attempting to create output directory {}", outputFile.getAbsolutePath());
+				while ((entry = tarInputStream.getNextTarEntry()) != null) {
+					File outputFile = new File(outputDir, entry.getName());
 
-                            if (!outputFile.mkdirs()) {
-                                throw new IllegalStateException(String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
-                            }
-                        }
-                    } else {
-                        LOG.debug("Extracting output file {}", outputFile.getAbsolutePath());
+					if (entry.isDirectory()) {
+						LOG.debug("Attempting to write output directory {}", outputFile.getAbsolutePath());
 
-                        try (OutputStream outputFileStream = new FileOutputStream(outputFile)) {
-                            IOUtils.copy(tarInputStream, outputFileStream);
-                        } catch (IOException e) {
-                            LOG.error("Error while extracting file {}", outputFile.getAbsolutePath(), e);
-                        }
-                    }
-                    untaredFiles.add(outputFile);
-                }
-            } catch (IOException e1) {
-                LOG.error("Error while untarring file {}", tarFile.getAbsolutePath(), e1);
-            }
-        }
+						if (!outputFile.exists()) {
+							LOG.debug("Attempting to create output directory {}", outputFile.getAbsolutePath());
 
-        try {
-            String pattern = "phantomjs";
-            Finder finder = new Finder(pattern);
-            Files.walkFileTree(uncompressPath, finder);
+							if (!outputFile.mkdirs()) {
+								throw new IllegalStateException(
+										String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
+							}
+						}
+					} else {
+						LOG.debug("Extracting output file {}", outputFile.getAbsolutePath());
 
-            if (finder.getNumMatches() == 1) {
-                try (FileOutputStream fos = new FileOutputStream(destination)) {
-                    Files.copy(finder.getMatches().get(0), fos);
-                }
-            }
-        } catch (IOException e) {
-            LOG.error("ERROR", e);
-        }
-    }
+						try (OutputStream outputFileStream = new FileOutputStream(outputFile)) {
+							IOUtils.copy(tarInputStream, outputFileStream);
+						} catch (IOException e) {
+							LOG.error("Error while extracting file {}", outputFile.getAbsolutePath(), e);
+						}
+					}
+					untaredFiles.add(outputFile);
+				}
+			} catch (IOException e1) {
+				LOG.error("Error while untarring file {}", tarFile.getAbsolutePath(), e1);
+			}
+		}
 
-    static class Finder extends SimpleFileVisitor<Path> {
+		try {
+			String pattern = "phantomjs";
+			Finder finder = new Finder(pattern);
+			Files.walkFileTree(uncompressPath, finder);
 
-        private final PathMatcher matcher;
-        private List<Path> matches = new LinkedList<Path>();
+			if (finder.getNumMatches() == 1) {
+				try (FileOutputStream fos = new FileOutputStream(destination)) {
+					Files.copy(finder.getMatches().get(0), fos);
+				}
+			}
+		} catch (IOException e) {
+			LOG.error("ERROR", e);
+		}
+	}
 
-        Finder(String pattern) {
-            matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
-        }
+	static class Finder extends SimpleFileVisitor<Path> {
 
-        void find(Path file) {
-            Path name = file.getFileName();
-            if (name != null && matcher.matches(name)) {
-                matches.add(file);
-            }
-        }
+		private final PathMatcher matcher;
+		private List<Path> matches = new LinkedList<Path>();
 
-        int getNumMatches() {
-            return matches.size();
-        }
+		Finder(String pattern) {
+			matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
+		}
 
-        List<Path> getMatches() {
-            return matches;
-        }
+		void find(Path file) {
+			Path name = file.getFileName();
+			if (name != null && matcher.matches(name)) {
+				matches.add(file);
+			}
+		}
 
-        @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-            find(file);
-            return FileVisitResult.CONTINUE;
-        }
+		int getNumMatches() {
+			return matches.size();
+		}
 
-        @Override
-        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-            find(dir);
-            return FileVisitResult.CONTINUE;
-        }
+		List<Path> getMatches() {
+			return matches;
+		}
 
-        @Override
-        public FileVisitResult visitFileFailed(Path file, IOException exc) {
-            LOG.error("ERROR", exc);
-            return FileVisitResult.CONTINUE;
-        }
-    }
+		@Override
+		public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+			find(file);
+			return FileVisitResult.CONTINUE;
+		}
 
-    public static void main(String[] args) {
-        PhantomjsDownloader.download(Version.V_2_1_1);
-    }
+		@Override
+		public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+			find(dir);
+			return FileVisitResult.CONTINUE;
+		}
+
+		@Override
+		public FileVisitResult visitFileFailed(Path file, IOException exc) {
+			LOG.error("ERROR", exc);
+			return FileVisitResult.CONTINUE;
+		}
+	}
+
+	public static void main(String[] args) {
+		PhantomjsDownloader.download(Version.V_2_1_1);
+	}
 }

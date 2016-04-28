@@ -1,18 +1,10 @@
 package es.qopuir.basicfitbot;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.FileAttribute;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -53,25 +45,13 @@ public class BotController {
     @ResponseBody
     @RequestMapping(value = "/horario", method = RequestMethod.GET, produces = MediaType.IMAGE_PNG_VALUE)
     public HttpEntity<byte[]> getHorario() throws IOException {
-        Path tempPath = Paths.get("target", "tmp", "img");
-        tempPath.toFile().mkdirs();
-        
-        Path createTempFile = Files.createTempFile(tempPath, "", ".png", new FileAttribute[0]);
-        File file = createTempFile.toFile();
-
-        basicFitRest.getBasicFitTimetable(file);
-
-        Resource photoResource = new FileSystemResource(file);
-
-        byte[] image = IOUtils.toByteArray(photoResource.getInputStream());
+        byte[] screenshot = basicFitRest.getBasicFitTimetable();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.IMAGE_PNG);
-        headers.setContentLength(image.length);
+        headers.setContentLength(screenshot.length);
 
-        file.delete();
-
-        return new HttpEntity<byte[]>(image, headers);
+        return new HttpEntity<byte[]>(screenshot, headers);
     }
 
     @RequestMapping(method = RequestMethod.POST, value = IDEALISTABOT_URL)
