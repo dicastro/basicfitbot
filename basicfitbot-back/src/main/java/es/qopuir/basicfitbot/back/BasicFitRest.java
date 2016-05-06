@@ -1,11 +1,11 @@
 package es.qopuir.basicfitbot.back;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.IntStream;
 
 import org.openqa.selenium.By;
@@ -53,13 +53,11 @@ public class BasicFitRest {
 		BASICFIT_TIMETABLE_PARAMS.add("embedded", "1");
 	}
 
+	private final ProxyProperties proxyProperties;
+
 	@Autowired
-	private ProxyProperties proxyProperties;
-
-	private final File phantomjs;
-
-	public BasicFitRest() {
-		phantomjs = PhantomjsDownloader.download(Version.V_2_1_1, proxyProperties);
+	public BasicFitRest(ProxyProperties proxyProperties) {
+		this.proxyProperties = proxyProperties;
 	}
 
 	public enum Mode {
@@ -76,6 +74,32 @@ public class BasicFitRest {
 
 		return uri.toUriString();
 	}
+	
+	/**
+	 * Returns today in short format (ex: Wed 27 Apr)
+	 * 
+	 * @return today in short format (ex: Wed 27 Apr)
+	 */
+	private String getTodayShort() {
+	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE dd MMM").withLocale(Locale.ENGLISH);
+	    
+	    LocalDate today = LocalDate.now();
+	    
+	    return today.format(formatter);
+    }
+	
+	/**
+     * Returns today in long format (ex: Wednesday 27 Apr)
+     * 
+     * @return today in long format (ex: Wednesday 27 Apr)
+     */
+	private String getTodayLong() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE dd MMM").withLocale(Locale.ENGLISH);
+        
+        LocalDate today = LocalDate.now();
+        
+        return today.format(formatter);
+    }
 
 	public byte[] getBasicFitTimetable() throws IOException {
 		return getBasicFitTimetable(Mode.TODAY);
@@ -92,8 +116,9 @@ public class BasicFitRest {
 		}
 
 		capabilities.setCapability(CapabilityType.TAKES_SCREENSHOT, true);
+		
 		capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY,
-				phantomjs.getAbsolutePath());
+		        PhantomjsDownloader.download(Version.V_2_1_1, proxyProperties).getAbsolutePath());
 
 		return capabilities;
 	}
@@ -121,8 +146,8 @@ public class BasicFitRest {
 
 			IntStream.range(0, titleColumns.size()).forEach((i) -> {
 				long todaySpans = titleColumns.get(i).findElements(By.tagName("span")).stream().filter((e) -> {
-					return !e.getText().equalsIgnoreCase("Wed 27 Apr")
-							&& !e.getText().equalsIgnoreCase("Wednesday 27 Apr");
+					return !e.getText().equalsIgnoreCase(getTodayShort())
+							&& !e.getText().equalsIgnoreCase(getTodayLong());
 				}).count();
 
 				if (todaySpans > 1) {

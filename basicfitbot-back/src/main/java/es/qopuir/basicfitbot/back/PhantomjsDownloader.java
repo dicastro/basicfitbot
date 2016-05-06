@@ -182,6 +182,8 @@ public class PhantomjsDownloader {
                 } else {
                     connection = downloadUrl.openConnection();
                 }
+                
+                connection.setConnectTimeout(5000);
             } catch (IOException e) {
                 throw new IllegalStateException("Download url not found " + downloadUrl.toString(), e);
             }
