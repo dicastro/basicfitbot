@@ -1,12 +1,14 @@
 package es.qopuir.basicfitbot;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,6 +117,10 @@ public class Methods {
     public MessageResponse sendPhoto(int chatId, URL imageUrl, File tempFile, String caption) throws IOException {
         return sendPhotoInternal(chatId, imageUrl, tempFile, caption, 0, null);
     }
+    
+    public MessageResponse sendPhoto(int chatId, byte[] image, File tempFile, String caption) throws IOException {
+        return sendPhotoInternal(chatId, image, tempFile, caption, 0, null);
+    }
 
     public MessageResponse sendPhoto(int chatId, URL imageUrl, File tempFile, String caption, int replyToMessageId, ReplyKeyboardMarkup replyMarkup)
             throws IOException {
@@ -137,10 +143,45 @@ public class Methods {
 
         return getRestTemplate().postForObject(getSendPhotoURI(), request, MessageResponse.class);
     }
+    
+    private MessageResponse sendPhotoInternal(int chatId, byte[] image, File tempFile, String caption, int replyToMessageId, Object replyMarkup)
+            throws IOException {
+        HttpEntity<Object> request = createImageRequest(chatId, image, tempFile, caption, replyToMessageId, replyMarkup);
+
+        return getRestTemplate().postForObject(getSendPhotoURI(), request, MessageResponse.class);
+    }
 
     private HttpEntity<Object> createImageRequest(int chatId, URL imageUrl, File tempFile, String caption, int replyToMessageId, Object replyMarkup)
             throws IOException {
         Files.copy(imageUrl.openStream(), tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+        Resource photoResource = new FileSystemResource(tempFile);
+
+        MultiValueMap<String, Object> data = new LinkedMultiValueMap<String, Object>();
+        
+        data.add("chat_id", chatId);
+        data.add("photo", photoResource);
+        data.add("caption", caption);
+        
+        if (replyToMessageId != 0) {
+            data.add("reply_to_message_id", replyToMessageId);
+        }
+        
+        if (replyMarkup != null) {
+            data.add("reply_markup", replyMarkup);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        
+        return new HttpEntity<Object>(data, headers);
+    }
+    
+    private HttpEntity<Object> createImageRequest(int chatId, byte[] image, File tempFile, String caption, int replyToMessageId, Object replyMarkup)
+            throws IOException {
+        try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+            IOUtils.write(image, fos);
+        }
 
         Resource photoResource = new FileSystemResource(tempFile);
 

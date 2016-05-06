@@ -1,7 +1,15 @@
 package es.qopuir.basicfitbot.internal;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +20,7 @@ import org.springframework.util.StringUtils;
 import es.qopuir.basicfitbot.Command;
 import es.qopuir.basicfitbot.CommandHandler;
 import es.qopuir.basicfitbot.Methods;
+import es.qopuir.basicfitbot.back.BasicFitRest;
 import es.qopuir.basicfitbot.model.Chat;
 import es.qopuir.basicfitbot.repo.ChatRepository;
 import es.qopuir.telegrambot.model.Update;
@@ -20,6 +29,9 @@ import es.qopuir.telegrambot.model.Update;
 public class CommandHandlerImpl implements CommandHandler {
     private static final Logger LOG = LoggerFactory.getLogger(CommandHandlerImpl.class);
 
+    @Autowired
+    private BasicFitRest basicFitRest;
+    
     @Autowired
     private Methods methods;
 
@@ -30,49 +42,73 @@ public class CommandHandlerImpl implements CommandHandler {
     @Override
     public void handleCommand(Update update, Command command) throws MalformedURLException, IOException {
         switch (command.getCommand()) {
-            case HELP:
-                sendIntroductionMessage(update);
-                break;
-            case START:
-                if (!StringUtils.isEmpty(command.getArgs())) {
-                    // TODO (dcastro): validate received buildingId
-                    Chat chat = new Chat();
-                    chat.setChatId(update.getMessage().getChat().getId());
-                    chat.setBuildingId(command.getArgs().trim());
+        case HELP:
+            sendIntroductionMessage(update);
+            break;
+        case START:
+            if (!StringUtils.isEmpty(command.getArgs())) {
+                // TODO (dcastro): validate received buildingId
+                Chat chat = new Chat();
+                chat.setChatId(update.getMessage().getChat().getId());
+                chat.setBuildingId(command.getArgs().trim());
 
-                    chatRepository.save(chat);
-                }
+                chatRepository.save(chat);
+            }
 
-                sendIntroductionMessage(update);
+            sendIntroductionMessage(update);
 
-                break;
-            case UNKNOWN:
-                sendInformationMessage(update);
-                break;
-            default:
-                handleIdealistaCommand(update, command);
-                break;
+            break;
+        case UNKNOWN:
+            sendInformationMessage(update);
+            break;
+        default:
+            handleIdealistaCommand(update, command);
+            break;
         }
     }
 
     private void sendIntroductionMessage(Update update) {
-        methods.sendMessage(update.getMessage().getChat().getId(), "You like the weather charts from the dmi.dk site?" + System.lineSeparator()
-                + "This bot can show you the weather forecast graphs for your desired city." + System.lineSeparator()
-                + "The following commands can be used:" + System.lineSeparator() + System.lineSeparator()
-                + "/now cityname - showing the two day weather" + System.lineSeparator() + "/week cityname - showing furhter weather of the week"
-                + System.lineSeparator() + System.lineSeparator() + "This bot project can be found at https://github.com/SimonScholz/telegram-bot");
+        methods.sendMessage(update.getMessage().getChat().getId(),
+                "No sabes que clases hay hoy en tu ginmasio BasicFit?" + System.lineSeparator() + "No te preocupes BasicFitBot te lo pone muy facil!"
+                        + System.lineSeparator() + "Envia:" + System.lineSeparator() + System.lineSeparator()
+                        + "/horario - para recuperar el horario del dia" + System.lineSeparator() + System.lineSeparator()
+                        + "Este bot se encuentra en https://github.com/dicastro/basicfitbot");
     }
 
     private void sendInformationMessage(Update update) {
         methods.sendMessage(update.getMessage().getChat().getId(),
-                "Command received (" + update.getMessage().getText() + ") is not well formatted." + System.lineSeparator()
-                        + "We are sorry to not be able to process it." + System.lineSeparator() + "The following commands can be used:"
-                        + System.lineSeparator() + System.lineSeparator() + "/now cityname - showing the two day weather" + System.lineSeparator()
-                        + "/week cityname - showing furhter weather of the week" + System.lineSeparator() + System.lineSeparator()
-                        + "This bot project can be found at https://github.com/SimonScholz/telegram-bot");
+                "El comando recibido (" + update.getMessage().getText() + ") no esta bien formateado." + System.lineSeparator()
+                        + "Lo lamentamos mucho, pero no somos capaces de procesarlo." + System.lineSeparator()
+                        + "Envia uno de los siguientes comandos:" + System.lineSeparator() + System.lineSeparator()
+                        + "/horario - para recuperar el horario del dia" + System.lineSeparator() + System.lineSeparator() + System.lineSeparator()
+                        + "Este bot se encuentra en https://github.com/dicastro/basicfitbot");
     }
 
     private void handleIdealistaCommand(Update update, Command command) throws MalformedURLException, IOException {
-        LOG.debug("Command received {} with arguments {}", command.getCommand(), command.getArgs());
+        switch (command.getCommand()) {
+        case HORARIO:
+            byte[] screenshot = basicFitRest.getBasicFitTimetable();
+
+            Path tmpDir = Paths.get("target", "tmp", "img");
+
+            if (!tmpDir.toFile().exists()) {
+                tmpDir.toFile().mkdirs();
+            }
+            
+            Path createTempFile = Files.createTempFile(tmpDir, "horario", ".png", new FileAttribute[0]);
+            File file = createTempFile.toFile();
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy").withLocale(Locale.ENGLISH);
+            
+            LocalDate today = LocalDate.now();
+            
+            methods.sendPhoto(update.getMessage().getChat().getId(), screenshot, file, "Horario de " + today.format(formatter));
+
+            file.delete();
+            
+            break;
+        default:
+            LOG.debug("Command received {} with arguments {}", command.getCommand(), command.getArgs());
+        }
     }
 }

@@ -5,19 +5,14 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import es.qopuir.basicfitbot.back.BasicFitRest;
 import es.qopuir.basicfitbot.internal.CommandImpl;
 import es.qopuir.telegrambot.model.Message;
 import es.qopuir.telegrambot.model.Update;
@@ -26,7 +21,7 @@ import es.qopuir.telegrambot.model.Update;
 public class BotController {
     private static final Logger LOG = LoggerFactory.getLogger(BotController.class);
 
-    public static final String IDEALISTABOT_URL = "/basicfitbot";
+    public static final String BASICFITBOT_URL = "/basicfitbot";
 
     @Autowired
     private CommandHandler commandHandler;
@@ -34,27 +29,12 @@ public class BotController {
     @Autowired
     private ObjectMapper jacksonObjectMapper;
 
-    @Autowired
-    private BasicFitRest basicFitRest;
-
     @RequestMapping("/ping")
     public void ping() throws IOException {
         LOG.info("ping ok!");
     }
 
-    @ResponseBody
-    @RequestMapping(value = "/horario", method = RequestMethod.GET, produces = MediaType.IMAGE_PNG_VALUE)
-    public HttpEntity<byte[]> getHorario() throws IOException {
-        byte[] screenshot = basicFitRest.getBasicFitTimetable();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.IMAGE_PNG);
-        headers.setContentLength(screenshot.length);
-
-        return new HttpEntity<byte[]>(screenshot, headers);
-    }
-
-    @RequestMapping(method = RequestMethod.POST, value = IDEALISTABOT_URL)
+    @RequestMapping(method = RequestMethod.POST, value = BASICFITBOT_URL)
     public void idealistabotRequest(@RequestBody Update update) throws IOException {
         if (update != null && update.getMessage() != null && !StringUtils.isEmpty(update.getMessage().getText())) {
             LOG.debug("Received update -> {}", jacksonObjectMapper.writer().writeValueAsString(update));

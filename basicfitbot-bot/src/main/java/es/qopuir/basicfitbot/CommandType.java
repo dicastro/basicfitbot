@@ -3,7 +3,7 @@ package es.qopuir.basicfitbot;
 import java.util.stream.Stream;
 
 public enum CommandType {
-    UNKNOWN("unknown"), START("/start"), HELP("/help"), TWO_DAY_WHEATHER("/now"), WEEK_WHEATHER("/week"), INMUEBLE("/inmueble");
+    UNKNOWN("unknown"), START("/start"), HELP("/help"), HORARIO("/horario");
 
     private final String text;
 

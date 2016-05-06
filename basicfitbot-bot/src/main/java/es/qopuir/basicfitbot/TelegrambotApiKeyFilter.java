@@ -30,9 +30,9 @@ public class TelegrambotApiKeyFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 		if (request.getMethod().equalsIgnoreCase(RequestMethod.POST.name())
-				&& request.getRequestURI().endsWith(BotController.IDEALISTABOT_URL)) {
+				&& request.getRequestURI().endsWith(BotController.BASICFITBOT_URL)) {
 			if (!request.getRequestURI().startsWith("/" + botProperties.getApiKey())) {
-				LOG.info("Rejected request '{}': api-key is missing", BotController.IDEALISTABOT_URL);
+				LOG.info("Rejected request '{}': api-key is missing", BotController.BASICFITBOT_URL);
 				return;
 			} else {
 				String newUrl = request.getRequestURI().substring(botProperties.getApiKey().length() + 1);
